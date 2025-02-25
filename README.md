@@ -23,3 +23,7 @@ You can start the server by running the following command:
 ```bash
 wiibleyde@SomeOVHServer:~$ /bin/python3 main.py
 ```
+
+## API
+
+The API is very simple. It has only one endpoint that allows you to get the stats of a Cobblemon. The endpoint `/api/v1/` gives you a list of all endpoints available.

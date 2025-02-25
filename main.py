@@ -152,6 +152,18 @@ def cached_get_user_cobblemon_stats(username: str) -> dict:
 # region API
 BASE_API_PATH_V1 = "/api/v1"
 
+@app.route(BASE_API_PATH_V1+'/', methods=['GET'])
+def api_get_root():
+    pathes = app.url_map._rules
+    baseJson = {
+        "api": "Wiibleyde Stat Maker",
+        "version": "1.0",
+        "endpoints": []
+    }
+    for path in pathes:
+        baseJson["endpoints"].append(path.rule)
+    return jsonify(baseJson)
+
 @app.route(BASE_API_PATH_V1+'/user/<username>/stats', methods=['GET'])
 def api_get_user_stats(username):
     stats = cached_get_user_stats(username)
