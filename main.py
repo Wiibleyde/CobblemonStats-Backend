@@ -10,9 +10,13 @@ BASE_SERVER_PATH = "./"
 
 # region User
 def get_all_users() -> list:
-    with open(BASE_SERVER_PATH + "usercache.json", "r") as file:
-        data = json.load(file)
-        return [user["name"] for user in data]
+    try:
+        with open(BASE_SERVER_PATH + "usercache.json", "r") as file:
+            data = json.load(file)
+            return [user["name"] for user in data]
+    except FileNotFoundError:
+        print("usercache.json not found", BASE_SERVER_PATH + "usercache.json")
+        return []
 
 def get_user_from_uuid(uuid: str) -> str:
     with open(BASE_SERVER_PATH + "usercache.json", "r") as file:
@@ -146,32 +150,34 @@ def cached_get_user_cobblemon_stats(username: str) -> dict:
 # endregion
 
 # region API
-@app.route('/api/user/<username>/stats', methods=['GET'])
+BASE_API_PATH_V1 = "/api/v1"
+
+@app.route(BASE_API_PATH_V1+'/user/<username>/stats', methods=['GET'])
 def api_get_user_stats(username):
     stats = cached_get_user_stats(username)
     if stats is None:
         return jsonify({"error": "User not found"}), 404
     return jsonify(stats)
 
-@app.route('/api/user/<username>/achievements', methods=['GET'])
+@app.route(BASE_API_PATH_V1+'/user/<username>/achievements', methods=['GET'])
 def api_get_user_achievements(username):
     achievements = cached_get_user_achievements(username)
     if achievements is None:
         return jsonify({"error": "User not found"}), 404
     return jsonify(achievements)
 
-@app.route('/api/user/<username>/cobblemon_stats', methods=['GET'])
+@app.route(BASE_API_PATH_V1+'/user/<username>/cobblemon_stats', methods=['GET'])
 def api_get_user_cobblemon_stats(username):
     stats = cached_get_user_cobblemon_stats(username)
     if stats is None:
         return jsonify({"error": "User not found"}), 404
     return jsonify(stats)
 
-@app.route('/api/leaderboard/pokemon_caught', methods=['GET'])
+@app.route(BASE_API_PATH_V1+'/leaderboard/pokemon_caught', methods=['GET'])
 def api_get_leaderboard_pokemon_caught():
     return jsonify(get_leaderboard_pokemon_caught())
 
-@app.route('/api/leaderboard/pokedex_caught', methods=['GET'])
+@app.route(BASE_API_PATH_V1+'/leaderboard/pokedex_caught', methods=['GET'])
 def api_get_leaderboard_pokedex_caught():
     shiny = request.args.get('shiny', 'false').lower() == 'true'
     return jsonify(get_leaderboard_pokedex_caught(shiny))
@@ -188,4 +194,5 @@ def parse_args():
 
 if __name__=='__main__':
     args = parse_args()
+    BASE_SERVER_PATH = args.path
     app.run(host=args.host, port=args.port, debug=args.debug)
