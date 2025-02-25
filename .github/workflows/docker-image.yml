@@ -22,12 +22,12 @@ jobs:
       run: echo "IMAGE_TAG=$(date +%s)" >> $GITHUB_ENV
 
     - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag cobblemon-stats-frontend:${{ env.IMAGE_TAG }} --tag cobblemon-stats-frontend:latest
+      run: docker build . --file Dockerfile --tag cobblemon-stats-backend:${{ env.IMAGE_TAG }} --tag cobblemon-stats-backend:latest
 
     - name: Push the Docker image
       run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-    - run: docker tag cobblemon-stats-frontend:${{ env.IMAGE_TAG }} ghcr.io/$(echo $GITHUB_REPOSITORY | tr '[:upper:]' '[:lower:]' | sed 's/_/-/g'):${{ env.IMAGE_TAG }}
-    - run: docker tag cobblemon-stats-frontend:latest ghcr.io/$(echo $GITHUB_REPOSITORY | tr '[:upper:]' '[:lower:]' | sed 's/_/-/g'):latest
+    - run: docker tag cobblemon-stats-backend:${{ env.IMAGE_TAG }} ghcr.io/$(echo $GITHUB_REPOSITORY | tr '[:upper:]' '[:lower:]' | sed 's/_/-/g'):${{ env.IMAGE_TAG }}
+    - run: docker tag cobblemon-stats-backend:latest ghcr.io/$(echo $GITHUB_REPOSITORY | tr '[:upper:]' '[:lower:]' | sed 's/_/-/g'):latest
     - run: docker push ghcr.io/$(echo $GITHUB_REPOSITORY | tr '[:upper:]' '[:lower:]' | sed 's/_/-/g'):${{ env.IMAGE_TAG }}
     - run: docker push ghcr.io/$(echo $GITHUB_REPOSITORY | tr '[:upper:]' '[:lower:]' | sed 's/_/-/g'):latest
