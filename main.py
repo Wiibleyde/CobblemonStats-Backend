@@ -1,11 +1,12 @@
 #!/bin/python3
 import json
+import os
 from flask import Flask, jsonify, request
 from functools import lru_cache
 
 app = Flask(__name__)
 
-BASE_SERVER_PATH = "./"
+BASE_SERVER_PATH = os.getenv('BASE_SERVER_PATH', './')
 
 # region User
 def get_all_users() -> list:
@@ -194,16 +195,8 @@ def api_get_leaderboard_pokedex_caught():
     return jsonify(get_leaderboard_pokedex_caught(shiny))
 # endregion
 
-def parse_args():
-    import argparse
-    parser = argparse.ArgumentParser(description='Wiibleyde Cobblemon Stats Backend')
-    parser.add_argument('--host', type=str, default='0.0.0.0', help='Host')
-    parser.add_argument('--port', type=int, default=5000, help='Port')
-    parser.add_argument('--debug', type=bool, default=False, help='Debug')
-    parser.add_argument('--path', type=str, default='./', help='Path')
-    return parser.parse_args()
-
 if __name__=='__main__':
-    args = parse_args()
-    BASE_SERVER_PATH = args.path
-    app.run(host=args.host, port=args.port, debug=args.debug)
+    host = os.getenv('HOST', '0.0.0.0')
+    port = int(os.getenv('PORT', 5000))
+    debug = os.getenv('DEBUG', 'False').lower() in ['true', '1', 't']
+    app.run(host=host, port=port, debug=debug)
