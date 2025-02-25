@@ -2,7 +2,6 @@
 import json
 from flask import Flask, jsonify, request
 from functools import lru_cache
-import argparse
 
 app = Flask(__name__)
 
@@ -197,7 +196,7 @@ def api_get_leaderboard_pokedex_caught():
 
 def parse_args():
     import argparse
-    parser = argparse.ArgumentParser(description='Wiibleyde Stat Maker')
+    parser = argparse.ArgumentParser(description='Wiibleyde Cobblemon Stats Backend')
     parser.add_argument('--host', type=str, default='0.0.0.0', help='Host')
     parser.add_argument('--port', type=int, default=5000, help='Port')
     parser.add_argument('--debug', type=bool, default=False, help='Debug')
