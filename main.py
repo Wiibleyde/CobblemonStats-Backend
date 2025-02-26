@@ -317,51 +317,33 @@ def api_get_leaderboard_image():
 # endregion
 
 def generate_ranking_image(list1, list2, background_path, output_path="ranking.png"):
-    # Charger l'image de fond
     image = Image.open(background_path).convert("RGBA")
     draw = ImageDraw.Draw(image)
-    
-    # Définir la police
     font = ImageFont.load_default(50)
-    
-    # Définir les positions de départ
     start_x = 50
     start_y = 50
     col_width = (image.width - 2 * start_x) // 2
-    line_height = 70  # Augmenté l'espacement des lignes pour s'adapter à la taille du texte
-    
-    # Ajouter un fond semi-transparent pour améliorer la lisibilité
-    overlay = Image.new("RGBA", image.size, (0, 0, 0, 150))  # Couvrir toute l'image
+    line_height = 70
+    overlay = Image.new("RGBA", image.size, (0, 0, 0, 150))
     image = Image.alpha_composite(image, overlay)
     draw = ImageDraw.Draw(image)
-    
-    # Titre des colonnes
     draw.text((start_x, start_y), "Nombre de pokemon dans le pokedex".encode('utf-8').decode('latin-1'), fill="white", font=font)
     draw.text((start_x + col_width, start_y), "Nombre de pokemon captures".encode('utf-8').decode('latin-1'), fill="white", font=font)
-    
-    # Dessiner les classements
     for index, entry in enumerate(list1, start=1):
         user = entry["user"]
-        score = next(value for key, value in entry.items() if key != "user")  # Trouver la valeur qui n'est pas "user"
+        score = next(value for key, value in entry.items() if key != "user")
         text = f"{index}. {user} : {score}".encode('utf-8').decode('latin-1')
-        draw.text((start_x, start_y + index * line_height), text, fill="white", font=font)
-    
+        draw.text((start_x, start_y + index * line_height), text, fill="white", font=font)    
     for index, entry in enumerate(list2, start=1):
         user = entry["user"]
-        score = next(value for key, value in entry.items() if key != "user")  # Trouver la valeur qui n'est pas "user"
+        score = next(value for key, value in entry.items() if key != "user")
         text = f"{index}. {user} : {score}".encode('utf-8').decode('latin-1')
         text_width = draw.textbbox((0, 0), text, font=font)[2]
         draw.text((start_x + col_width + col_width - text_width, start_y + index * line_height), text, fill="white", font=font)
-    
-    # Ajouter des bordures pour séparer les colonnes
     draw.line([(start_x + col_width - 20, start_y), (start_x + col_width - 20, start_y + (max(len(list1), len(list2)) + 1) * line_height)], fill="white", width=2)
-    
-    # Ajouter des bordures pour les titres
     draw.rectangle([start_x - 10, start_y - 10, start_x + col_width - 30, start_y + line_height], outline="white", width=2)
     draw.rectangle([start_x + col_width - 10, start_y - 10, start_x + 2 * col_width - 30, start_y + line_height], outline="white", width=2)
-    
-    # Sauvegarder l'image
-    image = image.convert("RGB")  # Convertir en RGB pour éviter les problèmes d'affichage
+    image = image.convert("RGB")
     image.save(output_path)
 
 if __name__=='__main__':
