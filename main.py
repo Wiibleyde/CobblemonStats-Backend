@@ -1,12 +1,16 @@
 #!/bin/python3
 import json
 import os
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_file
 from functools import lru_cache
+from PIL import Image, ImageDraw, ImageFont
 
 app = Flask(__name__)
 
-BASE_SERVER_PATH = os.getenv('BASE_SERVER_PATH', './Docker-data/les-chialeuses/cobblemon/')
+BASE_SERVER_PATH = os.getenv('BASE_SERVER_PATH', '../Docker-data/les-chialeuses/cobblemon/')
+
+BACKGROUND_PATH = os.getenv('IMAGE_PATH', './cobblemon.jpg')
+# IMAGE_PATH = './CobblemonStatsBack/bg.jpg'
 
 # region User
 def get_all_users() -> list:
@@ -138,8 +142,6 @@ def get_learderboard_lootr_chests_openned() -> list:
             leaderboard.append({"user": u, "lootr_chests_openned": lootr_chests_openned})
     leaderboard.sort(key=lambda x: x["lootr_chests_openned"], reverse=True)
     return leaderboard
-
-# TODO: Add more stats like, time played, distance walked, deaths, etc.
     
 # endregion
 
@@ -306,7 +308,61 @@ def api_get_leaderboard_lootball_openned():
 @app.route(BASE_API_PATH_V1+'/leaderboard/lootr_chests_openned', methods=['GET'])
 def api_get_leaderboard_lootr_chests_openned():
     return jsonify(get_learderboard_lootr_chests_openned())
+
+@app.route(BASE_API_PATH_V1+'/leaderboard/image.jpg', methods=['GET'])
+def api_get_leaderboard_image():
+    generate_ranking_image(get_leaderboard_pokedex_caught()[0:10], get_leaderboard_pokemon_caught()[0:10], BACKGROUND_PATH)
+    return send_file("ranking.png", mimetype='image/png')
+    
 # endregion
+
+def generate_ranking_image(list1, list2, background_path, output_path="ranking.png"):
+    # Charger l'image de fond
+    image = Image.open(background_path).convert("RGBA")
+    draw = ImageDraw.Draw(image)
+    
+    # Définir la police
+    font = ImageFont.load_default(50)
+    
+    # Définir les positions de départ
+    start_x = 50
+    start_y = 50
+    col_width = (image.width - 2 * start_x) // 2
+    line_height = 70  # Augmenté l'espacement des lignes pour s'adapter à la taille du texte
+    
+    # Ajouter un fond semi-transparent pour améliorer la lisibilité
+    overlay = Image.new("RGBA", image.size, (0, 0, 0, 150))  # Couvrir toute l'image
+    image = Image.alpha_composite(image, overlay)
+    draw = ImageDraw.Draw(image)
+    
+    # Titre des colonnes
+    draw.text((start_x, start_y), "Nombre de pokemon dans le pokedex".encode('utf-8').decode('latin-1'), fill="white", font=font)
+    draw.text((start_x + col_width, start_y), "Nombre de pokemon captures".encode('utf-8').decode('latin-1'), fill="white", font=font)
+    
+    # Dessiner les classements
+    for index, entry in enumerate(list1, start=1):
+        user = entry["user"]
+        score = next(value for key, value in entry.items() if key != "user")  # Trouver la valeur qui n'est pas "user"
+        text = f"{index}. {user} : {score}".encode('utf-8').decode('latin-1')
+        draw.text((start_x, start_y + index * line_height), text, fill="white", font=font)
+    
+    for index, entry in enumerate(list2, start=1):
+        user = entry["user"]
+        score = next(value for key, value in entry.items() if key != "user")  # Trouver la valeur qui n'est pas "user"
+        text = f"{index}. {user} : {score}".encode('utf-8').decode('latin-1')
+        text_width = draw.textbbox((0, 0), text, font=font)[2]
+        draw.text((start_x + col_width + col_width - text_width, start_y + index * line_height), text, fill="white", font=font)
+    
+    # Ajouter des bordures pour séparer les colonnes
+    draw.line([(start_x + col_width - 20, start_y), (start_x + col_width - 20, start_y + (max(len(list1), len(list2)) + 1) * line_height)], fill="white", width=2)
+    
+    # Ajouter des bordures pour les titres
+    draw.rectangle([start_x - 10, start_y - 10, start_x + col_width - 30, start_y + line_height], outline="white", width=2)
+    draw.rectangle([start_x + col_width - 10, start_y - 10, start_x + 2 * col_width - 30, start_y + line_height], outline="white", width=2)
+    
+    # Sauvegarder l'image
+    image = image.convert("RGB")  # Convertir en RGB pour éviter les problèmes d'affichage
+    image.save(output_path)
 
 if __name__=='__main__':
     host = os.getenv('HOST', '0.0.0.0')
