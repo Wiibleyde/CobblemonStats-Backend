@@ -311,7 +311,7 @@ def api_get_leaderboard_lootr_chests_openned():
 
 @app.route(BASE_API_PATH_V1+'/leaderboard/image.jpg', methods=['GET'])
 def api_get_leaderboard_image():
-    generate_ranking_image(get_leaderboard_pokedex_caught()[0:10], get_leaderboard_pokemon_caught()[0:10], BACKGROUND_PATH)
+    generate_ranking_image(get_leaderboard_pokedex_caught()[0:5], get_leaderboard_pokemon_caught()[0:5], BACKGROUND_PATH)
     return send_file("ranking.png", mimetype='image/png')
     
 # endregion
@@ -319,30 +319,54 @@ def api_get_leaderboard_image():
 def generate_ranking_image(list1, list2, background_path, output_path="ranking.png"):
     image = Image.open(background_path).convert("RGBA")
     draw = ImageDraw.Draw(image)
-    font = ImageFont.load_default(50)
+    font_path = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+    font = ImageFont.truetype(font_path, 50)
+    title_font = ImageFont.truetype(font_path, 70)
+    description_font = ImageFont.truetype(font_path, 40)
+    footer_font = ImageFont.truetype(font_path, 30)
+    
     start_x = 50
-    start_y = 50
+    start_y = 150
     col_width = (image.width - 2 * start_x) // 2
     line_height = 70
-    overlay = Image.new("RGBA", image.size, (0, 0, 0, 150))
+    overlay = Image.new("RGBA", image.size, (0, 0, 0, 200))
     image = Image.alpha_composite(image, overlay)
     draw = ImageDraw.Draw(image)
+    
+    title = "Leaderboard (Live)"
+    draw.text((image.width // 2 - draw.textbbox((0, 0), title, font=title_font)[2] // 2, 50), title, fill="white", font=title_font)
+    
     draw.text((start_x, start_y), "Nombre de pokemon dans le pokedex".encode('utf-8').decode('latin-1'), fill="white", font=font)
     draw.text((start_x + col_width, start_y), "Nombre de pokemon captures".encode('utf-8').decode('latin-1'), fill="white", font=font)
+
+    colors = ["#cf980e", "#9da9ab", "#805b00", "white"]
+
     for index, entry in enumerate(list1, start=1):
         user = entry["user"]
         score = next(value for key, value in entry.items() if key != "user")
         text = f"{index}. {user} : {score}".encode('utf-8').decode('latin-1')
-        draw.text((start_x, start_y + index * line_height), text, fill="white", font=font)    
+        color = colors[index - 1] if index <= 3 else colors[3]
+        draw.text((start_x, start_y + index * line_height), text, fill=color, font=font)
+
     for index, entry in enumerate(list2, start=1):
         user = entry["user"]
         score = next(value for key, value in entry.items() if key != "user")
         text = f"{index}. {user} : {score}".encode('utf-8').decode('latin-1')
+        color = colors[index - 1] if index <= 3 else colors[3]
         text_width = draw.textbbox((0, 0), text, font=font)[2]
-        draw.text((start_x + col_width + col_width - text_width, start_y + index * line_height), text, fill="white", font=font)
+        draw.text((start_x + col_width + col_width - text_width, start_y + index * line_height), text, fill=color, font=font)
+
     draw.line([(start_x + col_width - 20, start_y), (start_x + col_width - 20, start_y + (max(len(list1), len(list2)) + 1) * line_height)], fill="white", width=2)
     draw.rectangle([start_x - 10, start_y - 10, start_x + col_width - 30, start_y + line_height], outline="white", width=2)
     draw.rectangle([start_x + col_width - 10, start_y - 10, start_x + 2 * col_width - 30, start_y + line_height], outline="white", width=2)
+
+    description = "Les 5 meilleurs joueurs de Cobblemon"
+    draw.text((image.width // 2 - draw.textbbox((0, 0), description, font=description_font)[2] // 2, image.height - 150), description, fill="white", font=description_font)
+
+    # Footer text
+    footer_text = "- Made by Wiibleyde"
+    draw.text((image.width - draw.textbbox((0, 0), footer_text, font=footer_font)[2] - 10, image.height - 50), footer_text, fill="white", font=footer_font)
+
     image = image.convert("RGB")
     image.save(output_path)
 
