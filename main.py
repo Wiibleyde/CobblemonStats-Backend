@@ -153,7 +153,11 @@ def get_user_cobblemon_stats(username: str) -> dict:
         return None
     try:
         with open(BASE_SERVER_PATH + "world/cobblemonplayerdata/" + uuid[0:2] + "/" + uuid + ".json", "r") as file:
-            return json.load(file)
+            try:
+                return json.load(file)
+            except json.JSONDecodeError:
+                print(f"Error decoding JSON for user {username} with UUID {uuid}")
+                return None
     except FileNotFoundError:
         return None
     
