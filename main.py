@@ -6,6 +6,8 @@ from functools import lru_cache
 from PIL import Image, ImageDraw, ImageFont
 import threading
 import time
+from nbt import nbt
+from nbt.nbt import MalformedFileError
 
 app = Flask(__name__)
 
@@ -231,6 +233,88 @@ def get_leaderboard_pokedex_caught(shiny=False) -> list:
 
 # endregion
 
+# region Dat files
+def get_user_dat_file(username: str) -> dict:
+    uuid = get_uuid_from_user(username)
+    if uuid is None:
+        return None
+    try:
+        nbtfile = nbt.NBTFile(BASE_SERVER_PATH + "world/playerdata/" + uuid + ".dat", "rb")
+        return nbtfile
+    except FileNotFoundError:
+        return None
+    except MalformedFileError:
+        print(f"Malformed NBT file for user {username} with UUID {uuid}")
+        return None
+    
+def get_user_money(data) -> int:
+    try:
+        return int(data["cardinal_components"]["numismatic-overhaul:currency"]["Value"].value)
+    except KeyError:
+        return 0
+
+def get_leaderboard_money() -> list:
+    users = get_all_users()
+    leaderboard = []
+    for u in users:
+        dat = get_user_dat_file(u)
+        if dat is not None:
+            money = get_user_money(dat)
+            leaderboard.append({"user": u, "money": money})
+    leaderboard.sort(key=lambda x: x["money"], reverse=True)
+    return leaderboard
+    
+def get_user_pokemon_pc_dat_file(username: str) -> dict:
+    uuid = get_uuid_from_user(username)
+    if uuid is None:
+        return None
+    try:
+        nbtfile = nbt.NBTFile(BASE_SERVER_PATH + "world/pokemon/pcstore/" + uuid[0:2] + "/" + uuid + ".dat", "rb")
+        return nbtfile
+    except FileNotFoundError:
+        return None
+    except MalformedFileError:
+        print(f"Malformed NBT file for user {username} with UUID {uuid}")
+        return None
+    
+def get_user_pokemon_playerpartystore_dat_file(username: str) -> dict:
+    uuid = get_uuid_from_user(username)
+    if uuid is None:
+        return None
+    try:
+        nbtfile = nbt.NBTFile(BASE_SERVER_PATH + "world/pokemon/playerpartystore/" + uuid[0:2] + "/" + uuid + ".dat", "rb")
+        return nbtfile
+    except FileNotFoundError:
+        return None
+    except MalformedFileError:
+        print(f"Malformed NBT file for user {username} with UUID {uuid}")
+        return None
+    
+def get_user_pokemon_count(pc_data, playerpartystore_data) -> int:
+    total = 0
+    for box in range(50):
+        box_name = f"Box{box}"
+        if box_name in pc_data:
+            total += len(pc_data[box_name])
+    for box in range(50):
+        box_name = f"Slot{box}"
+        if box_name in playerpartystore_data:
+            total += len(playerpartystore_data[box_name])
+    return total
+
+def get_leaderboard_pokemon_count() -> list:
+    users = get_all_users()
+    leaderboard = []
+    for u in users:
+        pc_data = get_user_pokemon_pc_dat_file(u)
+        playerpartystore_data = get_user_pokemon_playerpartystore_dat_file(u)
+        if pc_data is not None and playerpartystore_data is not None:
+            pokemon_count = get_user_pokemon_count(pc_data, playerpartystore_data)
+            leaderboard.append({"user": u, "pokemon_count": pokemon_count})
+    leaderboard.sort(key=lambda x: x["pokemon_count"], reverse=True)
+    return leaderboard
+# endregion
+
 # region Cache
 @lru_cache(maxsize=128)
 def cached_get_user_stats(username: str) -> dict:
@@ -313,6 +397,14 @@ def api_get_leaderboard_lootball_openned():
 @app.route(BASE_API_PATH_V1+'/leaderboard/lootr_chests_openned', methods=['GET'])
 def api_get_leaderboard_lootr_chests_openned():
     return jsonify(get_learderboard_lootr_chests_openned())
+
+# @app.route(BASE_API_PATH_V1+'/leaderboard/money', methods=['GET'])
+# def api_get_leaderboard_money():
+#     return jsonify(get_leaderboard_money())
+
+@app.route(BASE_API_PATH_V1+'/leaderboard/pokemon_count', methods=['GET'])
+def api_get_leaderboard_pokemon_count():
+    return jsonify(get_leaderboard_pokemon_count())
 
 @app.route(BASE_API_PATH_V1+'/leaderboard/image.jpg', methods=['GET'])
 def api_get_leaderboard_image():
