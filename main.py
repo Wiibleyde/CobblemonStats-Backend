@@ -398,9 +398,9 @@ def api_get_leaderboard_lootball_openned():
 def api_get_leaderboard_lootr_chests_openned():
     return jsonify(get_learderboard_lootr_chests_openned())
 
-# @app.route(BASE_API_PATH_V1+'/leaderboard/money', methods=['GET'])
-# def api_get_leaderboard_money():
-#     return jsonify(get_leaderboard_money())
+@app.route(BASE_API_PATH_V1+'/leaderboard/money', methods=['GET'])
+def api_get_leaderboard_money():
+    return jsonify(get_leaderboard_money())
 
 @app.route(BASE_API_PATH_V1+'/leaderboard/pokemon_count', methods=['GET'])
 def api_get_leaderboard_pokemon_count():
